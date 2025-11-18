@@ -83,7 +83,10 @@ resource "aws_db_instance" "main" {
   )
 
   lifecycle {
-    ignore_changes = [final_snapshot_identifier]
+    ignore_changes = [
+      final_snapshot_identifier,
+      availability_zone
+    ]
   }
 }
 
