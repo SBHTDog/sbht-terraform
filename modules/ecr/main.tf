@@ -20,15 +20,15 @@ resource "aws_ecr_repository" "this" {
   )
 }
 
-# ECR Lifecycle Policy
-resource "aws_ecr_lifecycle_policy" "this" {
-  count      = length(var.lifecycle_policy) > 0 ? 1 : 0
-  repository = aws_ecr_repository.this.name
+# # ECR Lifecycle Policy // (commented due to apply failing on this resource)
+# resource "aws_ecr_lifecycle_policy" "this" {
+#   count      = length(var.lifecycle_policy) > 0 ? 1 : 0
+#   repository = aws_ecr_repository.this.name
 
-  policy = jsonencode({
-    rules = var.lifecycle_policy
-  })
-}
+#   policy = jsonencode({
+#     rules = var.lifecycle_policy
+#   })
+# }
 
 # ECR Repository Policy (for cross-account access if needed)
 resource "aws_ecr_repository_policy" "this" {
