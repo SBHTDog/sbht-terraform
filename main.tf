@@ -209,6 +209,8 @@ module "rds" {
   master_username   = var.rds_master_username
   master_password   = var.rds_master_password
 
+  publicly_accessible = true
+
   vpc_security_group_ids = [module.rds_sg.security_group_id]
   subnet_ids             = module.vpc.private_subnet_ids
 
