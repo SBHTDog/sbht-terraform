@@ -455,7 +455,7 @@ module "ec2" {
   
   subnet_id          = module.vpc.public_subnet_ids[0]
   security_group_ids = [module.ec2_sg.security_group_id]
-  key_name           = var.ec2_key_name
+  key_name           = var.ec2_key_name # this requires an existing key pair in AWS EC2 Console
 
   root_volume_encrypted = true
   
