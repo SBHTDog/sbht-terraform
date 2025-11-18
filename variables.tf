@@ -218,7 +218,7 @@ variable "enable_github_oidc" {
 variable "github_repo" {
   description = "GitHub repository in format 'owner/repo' for OIDC trust"
   type        = string
-  default     = "SBHTDog/sbht-terraform"
+  default     = "SBHTDog/sbht-deploy-target"
 }
 
 # S3 Configuration
