@@ -65,7 +65,7 @@ resource "aws_codedeploy_deployment_group" "this" {
 
   # Optional: CloudWatch Alarms for automatic rollback
   dynamic "alarm_configuration" {
-    for_each = length(var.alarm_configuration) > 0 ? [var.alarm_configuration] : []
+    for_each = var.alarm_configuration.enabled || length(var.alarm_configuration.alarms) > 0 ? [var.alarm_configuration] : []
     content {
       alarms                    = alarm_configuration.value.alarms
       enabled                   = alarm_configuration.value.enabled
