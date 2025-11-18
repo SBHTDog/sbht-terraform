@@ -275,7 +275,7 @@ module "ec2_rds" {
   publicly_accessible = true
 
   vpc_security_group_ids = [module.bastion_rds_sg.security_group_id]
-  subnet_ids             = module.vpc.private_subnet_ids
+  subnet_ids             = concat(module.vpc.public_subnet_ids, module.vpc.private_subnet_ids)
 
   multi_az               = false # Set to true for production
   deletion_protection    = false # Set to true for production
