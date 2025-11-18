@@ -126,6 +126,26 @@ module "rds_sg" {
   tags = var.tags
 }
 
+module "bastion_rds_sg" {
+  source = "./modules/sg"
+
+  vpc_id      = module.vpc.vpc_id
+  sg_name     = "${var.project_name}-bastion-rds-sg"
+  description = "Security group for RDS for Bastion"
+
+  ingress_rules = [
+    {
+      from_port                = 5432
+      to_port                  = 5432
+      protocol                 = "tcp"
+      source_security_group_id = module.ec2_sg.security_group_id
+      description              = "Allow PostgreSQL from EC2"
+    }
+  ]
+
+  tags = var.tags
+}
+
 module "ec2_sg" {
   source = "./modules/sg"
 
@@ -239,7 +259,7 @@ module "ec2_rds" {
 
   publicly_accessible = true
 
-  vpc_security_group_ids = [module.rds_sg.security_group_id]
+  vpc_security_group_ids = [module.bastion_rds_sg.security_group_id]
   subnet_ids             = module.vpc.private_subnet_ids
 
   multi_az               = false # Set to true for production
