@@ -19,7 +19,20 @@ module "ecr" {
   image_tag_mutability = var.ecr_image_tag_mutability # default "MUTABLE"
   scan_on_push         = var.ecr_scan_on_push # default true
 
-  lifecycle_policy = var.ecr_lifecycle_policy # 10 images retention
+  lifecycle_policy = [
+    {
+      rulePriority = 1
+      description  = "Keep last 10 images"
+      selection = {
+        tagStatus   = "any"
+        countType   = "imageCountMoreThan"
+        countNumber = 10
+      }
+      action = {
+        type = "expire"
+      }
+    }
+  ]
 
   tags = var.tags
 }
