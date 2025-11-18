@@ -259,10 +259,10 @@ module "rds" {
 }
 
 # RDS
-module "ec2_rds" {
+module "bastion_rds" {
   source = "./modules/rds"
 
-  identifier     = "${var.project_name}-ec2-db"
+  identifier     = "${var.project_name}-bastion-db"
   engine         = var.rds_engine # postgreSQL
   engine_version = var.rds_engine_version
   instance_class = var.rds_instance_class
