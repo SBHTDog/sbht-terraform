@@ -120,7 +120,14 @@ module "rds_sg" {
       protocol                 = "tcp"
       source_security_group_id = module.ec2_sg.security_group_id
       description              = "Allow PostgreSQL from EC2"
-    }
+    },
+    {
+      from_port                = 5432
+      to_port                  = 5432
+      protocol                 = "tcp"
+      cidr_blocks             = ["218.239.246.16/32"]
+      description              = "Allow PostgreSQL from SCIT"
+    },
   ]
 
   tags = var.tags
@@ -140,7 +147,15 @@ module "bastion_rds_sg" {
       protocol                 = "tcp"
       source_security_group_id = module.ec2_sg.security_group_id
       description              = "Allow PostgreSQL from EC2"
-    }
+    },
+    {
+      from_port                = 5432
+      to_port                  = 5432
+      protocol                 = "tcp"
+      cidr_blocks             = ["218.239.246.16/32"]
+      description              = "Allow PostgreSQL from SCIT"
+    },
+
   ]
 
   tags = var.tags
