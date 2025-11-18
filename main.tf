@@ -223,6 +223,34 @@ module "rds" {
   tags = var.tags
 }
 
+# RDS
+module "ec2_rds" {
+  source = "./modules/rds"
+
+  identifier     = "${var.project_name}-ec2-db"
+  engine         = var.rds_engine # postgreSQL
+  engine_version = var.rds_engine_version
+  instance_class = var.rds_instance_class
+
+  allocated_storage = var.rds_allocated_storage
+  database_name     = var.rds_database_name
+  master_username   = var.rds_master_username
+  master_password   = var.rds_master_password
+
+  publicly_accessible = true
+
+  vpc_security_group_ids = [module.rds_sg.security_group_id]
+  subnet_ids             = module.vpc.private_subnet_ids
+
+  multi_az               = false # Set to true for production
+  deletion_protection    = false # Set to true for production
+  skip_final_snapshot    = true  # Set to false for production
+
+  backup_retention_period = 7
+  
+  tags = var.tags
+}
+
 # Application Load Balancer
 module "alb" {
   source = "./modules/alb"
