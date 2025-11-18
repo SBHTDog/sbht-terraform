@@ -244,14 +244,12 @@ module "rds" {
   master_username   = var.rds_master_username
   master_password   = var.rds_master_password
 
-  publicly_accessible = true
-
   vpc_security_group_ids = [module.rds_sg.security_group_id]
   subnet_ids             = module.vpc.private_subnet_ids
 
-  multi_az               = false # Set to true for production
-  deletion_protection    = false # Set to true for production
-  skip_final_snapshot    = true  # Set to false for production
+  multi_az               = true # Set to true for production
+  deletion_protection    = true # Set to true for production
+  skip_final_snapshot    = false  # Set to false for production
 
   backup_retention_period = 7
   
@@ -303,7 +301,7 @@ module "alb" {
   health_check_timeout  = 5
 
   enable_deletion_protection = false # Set to true for production
-  enable_https_redirect      = false # Set to true if you have SSL certificate
+  enable_https_redirect      = true # Set to true if you have SSL certificate
   certificate_arn            = var.alb_certificate_arn
 
   create_test_listener = var.enable_blue_green_deployment
