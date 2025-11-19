@@ -88,8 +88,8 @@ module "ecs_sg" {
 
   ingress_rules = [
     {
-      from_port                = 80
-      to_port                  = 80
+      from_port                = 3000
+      to_port                  = 3000
       protocol                 = "tcp"
       source_security_group_id = module.alb_sg.security_group_id
       description              = "Allow HTTP from ALB"
