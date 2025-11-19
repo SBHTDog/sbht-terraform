@@ -384,7 +384,7 @@ module "codedeploy" {
   blue_target_group_name  = module.alb.blue_target_group_name
   green_target_group_name = module.alb.green_target_group_name
 
-  prod_listener_arns = [module.alb.http_listener_arn]
+  prod_listener_arns = [module.alb.https_listener_arn]
   test_listener_arns = module.alb.test_listener_arn != null ? [module.alb.test_listener_arn] : []
 
   auto_rollback_enabled = true

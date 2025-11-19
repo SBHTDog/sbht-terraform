@@ -129,7 +129,7 @@ variable "container_image" {
 variable "container_port" {
   description = "Port exposed by the container"
   type        = number
-  default     = 80
+  default     = 3000
 }
 
 # ECR Configuration
