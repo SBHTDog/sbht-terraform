@@ -39,6 +39,10 @@ resource "aws_lb_target_group" "blue" {
 
   deregistration_delay = var.deregistration_delay
 
+  lifecycle {
+    create_before_destroy = true
+  }
+
   tags = merge(
     var.tags,
     {
@@ -68,6 +72,10 @@ resource "aws_lb_target_group" "green" {
   }
 
   deregistration_delay = var.deregistration_delay
+
+  lifecycle {
+    create_before_destroy = true
+  }
 
   tags = merge(
     var.tags,
