@@ -181,6 +181,13 @@ resource "aws_ecs_service" "main" {
 
   enable_execute_command = var.enable_execute_command
 
+  lifecycle {
+    ignore_changes = [
+      load_balancer,
+      task_definition
+    ]
+  }
+
   tags = var.tags
 
   depends_on = [

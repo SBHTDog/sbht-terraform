@@ -323,7 +323,7 @@ module "ecs" {
   cluster_name = "${var.project_name}-cluster"
   aws_region   = var.aws_region
 
-  create_task_definition = false
+  create_task_definition = true
   task_family            = "${var.project_name}-app"
   task_cpu               = var.ecs_task_cpu
   task_memory            = var.ecs_task_memory
