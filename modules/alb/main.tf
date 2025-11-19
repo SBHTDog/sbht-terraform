@@ -20,7 +20,7 @@ resource "aws_lb" "this" {
 
 # Blue Target Group (Production)
 resource "aws_lb_target_group" "blue" {
-  name        = "${var.alb_name}-prod-tg"
+  name        = "${var.alb_name}-prod-tg-2"
   port        = var.target_port
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
@@ -54,7 +54,7 @@ resource "aws_lb_target_group" "blue" {
 
 # Green Target Group (For Blue/Green Deployment)
 resource "aws_lb_target_group" "green" {
-  name        = "${var.alb_name}-green-tg"
+  name        = "${var.alb_name}-green-tg-2"
   port        = var.target_port
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
