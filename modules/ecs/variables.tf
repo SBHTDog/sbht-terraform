@@ -214,6 +214,12 @@ variable "autoscaling_memory_target" {
   default     = 80
 }
 
+variable "s3_bucket_arn" {
+  description = "ARN of the S3 bucket for task role access"
+  type        = string
+  default     = null
+}
+
 variable "tags" {
   description = "Tags to apply to resources"
   type        = map(string)

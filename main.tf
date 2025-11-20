@@ -232,6 +232,12 @@ module "ssm" {
       type        = "SecureString"
       description = "Database password"
     }
+    s3_bucket_name = {
+      name        = "/${var.project_name}/${var.environment}/s3/bucket_name"
+      value       = module.s3.bucket_id
+      type        = "String"
+      description = "S3 bucket name"
+    }
   }
 
   tags = var.tags
@@ -360,10 +366,16 @@ module "ecs" {
     {
       name      = "DB_PASSWORD"
       valueFrom = module.ssm.parameter_arns["db_password"]
+    },
+    {
+      name      = "S3_BUCKET_NAME"
+      valueFrom = module.ssm.parameter_arns["s3_bucket_name"]
     }
   ]
 
   enable_autoscaling = false
+
+  s3_bucket_arn = module.s3.bucket_arn
 
   tags = var.tags
 }

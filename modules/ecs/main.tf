@@ -106,6 +106,36 @@ resource "aws_iam_role" "ecs_task_role" {
   tags = var.tags
 }
 
+# S3 Access Policy for ECS Task Role
+resource "aws_iam_role_policy" "ecs_task_role_s3" {
+  count = var.s3_bucket_arn != null ? 1 : 0
+  name  = "${var.cluster_name}-ecs-task-role-s3"
+  role  = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Sid    = "AllowS3Upload"
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:PutObjectAcl"
+        ]
+        Resource = "${var.s3_bucket_arn}/*"
+      },
+      {
+        Sid    = "AllowS3Read"
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject"
+        ]
+        Resource = "${var.s3_bucket_arn}/*"
+      }
+    ]
+  })
+}
+
 # ECS Task Definition
 resource "aws_ecs_task_definition" "main" {
   count                    = var.create_task_definition ? 1 : 0
