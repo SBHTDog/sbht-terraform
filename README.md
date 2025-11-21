@@ -1,385 +1,373 @@
-# Terraform AWS Infrastructure
+# sbht-terraform
 
-A comprehensive Terraform project for deploying a production-ready AWS infrastructure with VPC, EC2, ECS, RDS, S3, SNS, and SSM Parameter Store.
+<details open>
+<summary><strong>🇰🇷 한국어</strong></summary>
 
-## 🏗️ Architecture Overview
+## 📋 프로젝트 개요
 
-This project deploys a complete AWS infrastructure including:
+**sbht-terraform**은 AWS 인프라를 코드로 관리하는 Infrastructure as Code (IaC) 프로젝트입니다. Terraform을 사용하여 프로덕션 환경에 적합한 완전한 AWS 클라우드 인프라를 자동으로 프로비저닝합니다.
 
-- **VPC**: Multi-AZ VPC with public and private subnets, NAT Gateways, and VPC Flow Logs
-- **Security Groups**: Properly configured security groups for ALB, ECS, RDS, and EC2
-- **ECS**: Fargate-based container orchestration with auto-scaling capabilities
-- **RDS**: PostgreSQL database with encryption, automated backups, and enhanced monitoring
-- **S3**: Encrypted storage with versioning and lifecycle policies
-- **SNS**: Notification system for alerts and monitoring
-- **SSM Parameter Store**: Secure storage for configuration and secrets
-- **EC2**: Optional bastion host for database access
+이 프로젝트는 Softbank Hackerthon 2025를 위한 SBHTDog 조직의 핵심 인프라 저장소입니다.
 
-## 📋 Prerequisites
+## 🏗️ 아키텍처 개요
 
-- [Terraform](https://www.terraform.io/downloads.html) >= 1.5.0
-- AWS CLI configured with appropriate credentials
-- AWS account with necessary permissions
+### 배포되는 AWS 리소스
 
-## 🚀 Quick Start
+#### 🌐 네트워킹
 
-### 1. Clone the Repository
+- **VPC**: 다중 가용 영역(Multi-AZ) 구성의 VPC
+  - 퍼블릭 서브넷: ALB, NAT Gateway, Bastion Host용
+  - 프라이빗 서브넷: ECS Fargate, RDS용
+- **NAT Gateway**: 프라이빗 서브넷의 인터넷 아웃바운드 연결
+- **Internet Gateway**: 퍼블릭 서브넷의 인터넷 연결
+- **VPC Flow Logs**: 네트워크 트래픽 모니터링
 
-```bash
-git clone <repository-url>
-cd terraform_study
+#### 🔐 보안
+
+- **Security Groups**:
+  - ALB 보안 그룹 (HTTP/HTTPS/8080 허용)
+  - ECS 보안 그룹 (ALB로부터의 트래픽만 허용)
+  - RDS 보안 그룹 (ECS와 EC2로부터의 PostgreSQL 연결 허용)
+  - EC2 보안 그룹 (SSH, HTTP, HTTPS)
+- **IAM Roles**:
+  - ECS Task Execution Role
+  - ECS Task Role (S3, SSM 액세스)
+  - CodeDeploy Role
+  - GitHub Actions OIDC Role
+- **SSM Parameter Store**: 민감한 설정 정보 보안 저장
+
+#### 🐳 컨테이너 인프라
+
+- **ECR (Elastic Container Registry)**: Docker 이미지 저장소
+- **ECS (Elastic Container Service)**:
+  - Fargate 클러스터
+  - 서비스 자동 배포 및 관리
+  - 컨테이너 로그는 CloudWatch로 전송
+
+#### ⚖️ 로드 밸런싱
+
+- **Application Load Balancer (ALB)**:
+  - HTTPS 리다이렉트 지원
+  - Blue/Green 배포를 위한 이중 타겟 그룹
+  - 포트 8080의 테스트 리스너 (Blue/Green 배포용)
+  - 헬스 체크 구성
+
+#### 🗄️ 데이터베이스
+
+- **RDS PostgreSQL**:
+  - 다중 AZ 배포 (고가용성)
+  - 자동 백업 (7일 보관)
+  - 암호화 활성화
+  - Enhanced Monitoring
+  - 두 개의 독립적인 데이터베이스:
+    - 메인 애플리케이션용 (프라이빗)
+    - Bastion 서비스용 (퍼블릭 액세스)
+
+#### 📦 스토리지
+
+- **S3 Bucket**:
+  - 버전 관리 활성화
+  - 암호화 적용
+  - 라이프사이클 정책:
+    - 30일 후 Standard-IA로 이동
+    - 90일 후 Glacier로 이동
+  - CORS 설정 (웹 애플리케이션 통합)
+
+#### 🚀 배포 자동화
+
+- **CodeDeploy**:
+  - Blue/Green 배포 전략
+  - ECS 서비스 자동 배포
+  - 자동 롤백 기능
+  - 배포 준비 상태 확인
+
+#### 📊 모니터링
+
+- **CloudWatch**: 로그 및 메트릭 수집
+
+#### 🖥️ 관리 인스턴스
+
+- **EC2 Bastion Host**:
+  - 데이터베이스 관리용
+  - 프라이빗 리소스 액세스용
+
+## 📂 디렉토리 구조
+
+```
+sbht-terraform/
+├── main.tf              # 메인 Terraform 설정
+├── variables.tf         # 변수 정의
+├── outputs.tf          # 출력 값
+├── provider.tf         # AWS 프로바이더 설정
+└── modules/
+    ├── vpc/           # VPC 및 네트워킹
+    ├── ecr/           # Container Registry
+    ├── iam/           # IAM 역할 및 정책
+    ├── sg/            # 보안 그룹
+    ├── ssm/           # Parameter Store
+    ├── rds/           # PostgreSQL 데이터베이스
+    ├── alb/           # Application Load Balancer
+    ├── ecs/           # ECS 클러스터 및 서비스
+    ├── codedeploy/    # CodeDeploy 배포 그룹
+    ├── s3/            # S3 버킷
+    ├── sns/           # SNS 토픽
+    └── ec2/           # EC2 인스턴스
 ```
 
-### 2. Create a `terraform.tfvars` File
+## 🚀 시작하기
 
-```hcl
-aws_region    = "ap-northeast-2"
-project_name  = "my-app"
-environment   = "dev"
+### 사전 요구사항
 
-# EC2 Configuration
-ec2_key_name = "my-keypair"  # Your EC2 key pair name
+- Terraform Cloud
+- AWS 계정 및 적절한 권한
 
-# RDS Configuration
-rds_master_username = "dbadmin"
-rds_master_password = "YourSecurePassword123!"  # Change this!
+## ⚙️ 주요 설정 변수
 
-# Notification
-alert_email = "your-email@example.com"
+| 변수                    | 설명                                                          | 예시                                         |
+| ----------------------- | ------------------------------------------------------------- | -------------------------------------------- |
+| `alb_certificate_arn`   | ALB에 사용되는 SSL 인증서                                     | `arn:aws:acm:ap-northeast-2:~:certificate/~` |
+| `container_port`        | ECS 컨테이너 포트                                             | `3000`                                       |
+| `enable_github_oidc`    | GitHub Actions에서 AWS에 접근하기 위한 OIDC 권한 및 역할 생성 | `true`                                       |
+| `enable_nat_gateway`    | VPC Nat Gateway 생성 여부                                     | `true`                                       |
+| `github_repo`           | AWS에 접근할 GitHub Actions의 Repository                      | `SBHTDog/sbht-deploy-target`                 |
+| `project_name`          | AWS 리소스들의 이름의 접두사 및 태그                          | `sbht-aws`                                   |
+| `rds_master_password`   | RDS 관리자 패스워드 (PostgreSQL Admin user password)          | `yourdbpassword`                             |
+| `rds_master_username`   | RDS 관리자 유저네임 (PostgreSQL Admin username)               | `true`                                       |
+| `AWS_ACCESS_KEY_ID`     | AWS API 접속을 위한 액세스키 환경 변수                        | `AKIA~`                                      |
+| `AWS_REGION`            | AWS 리소스 리전 (환경 변수)                                   | `ap-northeast-2`                             |
+| `AWS_SECRET_ACCESS_KEY` | AWS API 접속을 위한 비밀 액세스키 환경 변수                   | `~`                                          |
 
-# Optional: Override defaults
-# ecs_task_cpu    = "512"
-# ecs_task_memory = "1024"
-# container_image = "your-app:latest"
+## 🔄 Blue/Green 배포
+
+배포 프로세스:
+
+1. 새 버전(Green)이 별도의 타겟 그룹에 배포
+2. 헬스 체크 통과 확인
+3. 트래픽을 점진적으로 Green으로 전환 (ELB Target Group 변경)
+4. 기존 버전(Blue) 종료
+
+## 📊 모니터링 및 로깅
+
+### CloudWatch Logs
+
+- ECS 컨테이너 로그는 자동으로 CloudWatch로 전송
+- 로그 그룹: `/ecs/{project_name}-cluster`
+
+### VPC Flow Logs
+
+- VPC 트래픽 분석
+- CloudWatch Logs에 저장
+
+## 🔐 보안 모범 사례
+
+### 구현된 보안 기능
+
+1. **네트워크 분리**: 퍼블릭/프라이빗 서브넷 분리
+2. **최소 권한 원칙**: IAM 역할에 필요한 최소 권한만 부여
+3. **암호화**:
+   - RDS 저장 데이터 암호화
+   - S3 버킷 암호화
+   - EBS 볼륨 암호화
+4. **시크릿 관리**: SSM Parameter Store (SecureString)
+5. **네트워크 보안**: 보안 그룹을 통한 트래픽 제어
+6. **감사**: VPC Flow Logs를 통한 네트워크 트래픽 모니터링
+
+## 📝 출력 값
+
+배포 후 다음 정보를 얻을 수 있습니다:
+
+- VPC ID 및 서브넷 ID
+- ECR 저장소 URL
+- ALB DNS 이름
+- ECS 클러스터 및 서비스 이름
+- RDS 엔드포인트
+- S3 버킷 이름
+
+</details>
+
+<details>
+<summary><strong>🇯🇵 日本語</strong></summary>
+
+## 📋 プロジェクト概要
+
+**sbht-terraform**は、AWS インフラをコードで管理する Infrastructure as Code (IaC)プロジェクトです。Terraform を使用して、本番環境に適した完全な AWS クラウドインフラを自動的にプロビジョニングします。
+
+このプロジェクトは、Softbank Hackerthon 2025 のための SBHTDog 組織のコアインフラリポジトリです。
+
+## 🏗️ アーキテクチャ概要
+
+### デプロイされる AWS リソース
+
+#### 🌐 ネットワーキング
+
+- **VPC**: マルチアベイラビリティゾーン(Multi-AZ)構成の VPC
+  - パブリックサブネット: ALB、NAT ゲートウェイ、Bastion ホスト用
+  - プライベートサブネット: ECS Fargate、RDS 用
+- **NAT ゲートウェイ**: プライベートサブネットのインターネットアウトバウンド接続
+- **インターネットゲートウェイ**: パブリックサブネットのインターネット接続
+- **VPC Flow Logs**: ネットワークトラフィックモニタリング
+
+#### 🔐 セキュリティ
+
+- **セキュリティグループ**:
+  - ALB セキュリティグループ (HTTP/HTTPS/8080 許可)
+  - ECS セキュリティグループ (ALB からのトラフィックのみ許可)
+  - RDS セキュリティグループ (ECS と EC2 からの PostgreSQL 接続許可)
+  - EC2 セキュリティグループ (SSH、HTTP、HTTPS)
+- **IAM ロール**:
+  - ECS Task Execution Role
+  - ECS Task Role (S3、SSM アクセス)
+  - CodeDeploy Role
+  - GitHub Actions OIDC Role
+- **SSM Parameter Store**: 機密設定情報の安全な保存
+
+#### 🐳 コンテナインフラ
+
+- **ECR (Elastic Container Registry)**: Docker イメージリポジトリ
+  - イメージスキャン自動化
+  - ライフサイクルポリシー (最新 10 イメージ保持)
+- **ECS (Elastic Container Service)**:
+  - Fargate クラスター
+  - サービス自動デプロイおよび管理
+  - コンテナログは CloudWatch に送信
+
+#### ⚖️ ロードバランシング
+
+- **Application Load Balancer (ALB)**:
+  - HTTPS リダイレクト対応
+  - Blue/Green デプロイメント用の二重ターゲットグループ
+  - ポート 8080 のテストリスナー (Blue/Green デプロイメント用)
+  - ヘルスチェック設定
+
+#### 🗄️ データベース
+
+- **RDS PostgreSQL**:
+  - マルチ AZ デプロイメント (高可用性)
+  - 自動バックアップ (7 日保持)
+  - 暗号化有効化
+  - Enhanced Monitoring
+  - 2 つの独立したデータベース:
+    - メインアプリケーション用 (プライベート)
+    - Bastion サービス用 (パブリックアクセス)
+
+#### 📦 ストレージ
+
+- **S3 バケット**:
+  - バージョニング有効化
+  - 暗号化適用
+  - ライフサイクルポリシー:
+    - 30 日後に Standard-IA に移動
+    - 90 日後に Glacier に移動
+  - CORS 設定 (Web アプリケーション統合)
+
+#### 🚀 デプロイメント自動化
+
+- **CodeDeploy**:
+  - Blue/Green デプロイメント戦略
+  - ECS サービス自動デプロイ
+  - 自動ロールバック機能
+  - デプロイ準備状態確認
+
+#### 📊 モニタリング
+
+- **CloudWatch**: ログおよびメトリクス収集
+
+#### 🖥️ 管理インスタンス
+
+- **EC2 Bastion ホスト**:
+  - データベース管理用
+  - プライベートリソースアクセス用
+
+## 📂 ディレクトリ構造
+
+```
+sbht-terraform/
+├── main.tf              # メインTerraform設定
+├── variables.tf         # 変数定義
+├── outputs.tf          # 出力値
+├── provider.tf         # AWSプロバイダー設定
+└── modules/
+    ├── vpc/           # VPCおよびネットワーキング
+    ├── ecr/           # Container Registry
+    ├── iam/           # IAMロールとポリシー
+    ├── sg/            # セキュリティグループ
+    ├── ssm/           # Parameter Store
+    ├── rds/           # PostgreSQLデータベース
+    ├── alb/           # Application Load Balancer
+    ├── ecs/           # ECSクラスターとサービス
+    ├── codedeploy/    # CodeDeployデプロイメントグループ
+    ├── s3/            # S3バケット
+    ├── sns/           # SNSトピック
+    └── ec2/           # EC2インスタンス
 ```
 
-### 3. Initialize Terraform
-
-```bash
-terraform init
-```
-
-### 4. Review the Plan
-
-```bash
-terraform plan
-```
-
-### 5. Apply the Configuration
-
-```bash
-terraform apply
-```
-
-Type `yes` when prompted to create the infrastructure.
-
-## 📁 Project Structure
-
-```
-.
-├── main.tf                 # Main infrastructure configuration
-├── variables.tf            # Input variables
-├── outputs.tf              # Output values
-├── provider.tf             # Provider and backend configuration
-├── terraform.tfvars        # Variable values (create this file)
-├── modules/
-│   ├── vpc/               # VPC module
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   ├── sg/                # Security Group module
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   ├── ec2/               # EC2 module
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   ├── ecs/               # ECS module
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   ├── rds/               # RDS module
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   ├── s3/                # S3 module
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   ├── sns/               # SNS module
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   └── outputs.tf
-│   └── ssm/               # SSM Parameter Store module
-│       ├── main.tf
-│       ├── variables.tf
-│       └── outputs.tf
-└── README.md              # This file
-```
-
-## 🔧 Configuration
-
-### Key Variables
-
-| Variable              | Description                         | Default           | Required |
-| --------------------- | ----------------------------------- | ----------------- | -------- |
-| `aws_region`          | AWS region to deploy resources      | `ap-northeast-2`  | No       |
-| `project_name`        | Project name for resource naming    | `terraform-study` | No       |
-| `environment`         | Environment name (dev/staging/prod) | `dev`             | No       |
-| `rds_master_username` | RDS master username                 | `dbadmin`         | Yes      |
-| `rds_master_password` | RDS master password                 | -                 | Yes      |
-| `alert_email`         | Email for CloudWatch alarms         | -                 | No       |
-| `ec2_key_name`        | EC2 key pair name                   | -                 | No       |
-| `container_image`     | Docker image for ECS                | `nginx:latest`    | No       |
-
-### Network Configuration
-
-The default VPC CIDR is `10.0.0.0/16` with:
-
-- Public subnets: `10.0.1.0/24`, `10.0.2.0/24`
-- Private subnets: `10.0.11.0/24`, `10.0.12.0/24`
-
-Modify `vpc_cidr` in `variables.tf` or override in `terraform.tfvars` to change.
-
-## 🔐 Security Best Practices Implemented
-
-### 1. **Network Security**
+## 🚀 はじめに
 
-- ✅ Multi-AZ deployment with public and private subnets
-- ✅ NAT Gateways for private subnet internet access
-- ✅ VPC Flow Logs enabled for network monitoring
-- ✅ Security groups with least privilege access
-
-### 2. **Data Encryption**
+### 前提条件
 
-- ✅ RDS storage encryption enabled by default
-- ✅ S3 server-side encryption (AES256)
-- ✅ SSM Parameter Store with SecureString type
-- ✅ EC2 EBS volume encryption
+- Terraform Cloud
+- AWS アカウントおよび適切な権限
 
-### 3. **Access Control**
+## ⚙️ 主要設定変数
 
-- ✅ IMDSv2 required for EC2 metadata access
-- ✅ IAM roles for ECS tasks with minimal permissions
-- ✅ Security group rules with specific source/destination
-- ✅ RDS not publicly accessible
+| 変数                    | 説明                                                                 | 例                                           |
+| ----------------------- | -------------------------------------------------------------------- | -------------------------------------------- |
+| `alb_certificate_arn`   | ALB に使用される SSL 証明書                                          | `arn:aws:acm:ap-northeast-2:~:certificate/~` |
+| `container_port`        | ECS コンテナポート                                                   | `3000`                                       |
+| `enable_github_oidc`    | GitHub Actions から AWS にアクセスするための OIDC 権限とロールを作成 | `true`                                       |
+| `enable_nat_gateway`    | VPC Nat Gateway 作成の有無                                           | `true`                                       |
+| `github_repo`           | AWS にアクセスする GitHub Actions のリポジトリ                       | `SBHTDog/sbht-deploy-target`                 |
+| `project_name`          | AWS リソース名のプレフィックスおよびタグ                             | `sbht-aws`                                   |
+| `rds_master_password`   | RDS 管理者パスワード (PostgreSQL Admin user password)                | `yourdbpassword`                             |
+| `rds_master_username`   | RDS 管理者ユーザー名 (PostgreSQL Admin username)                     | `true`                                       |
+| `AWS_ACCESS_KEY_ID`     | AWS API アクセス用のアクセスキー環境変数                             | `AKIA~`                                      |
+| `AWS_REGION`            | AWS リソースリージョン (環境変数)                                    | `ap-northeast-2`                             |
+| `AWS_SECRET_ACCESS_KEY` | AWS API アクセス用のシークレットアクセスキー環境変数                 | `~`                                          |
 
-### 4. **Monitoring & Logging**
+## 🔄 Blue/Green デプロイメント
 
-- ✅ CloudWatch Container Insights for ECS
-- ✅ RDS Enhanced Monitoring
-- ✅ RDS Performance Insights
-- ✅ VPC Flow Logs to CloudWatch
-- ✅ SNS alerts for failed notifications
+デプロイメントプロセス:
 
-### 5. **Backup & Recovery**
+1. 新バージョン(Green)が別のターゲットグループにデプロイ
+2. ヘルスチェック通過確認
+3. トラフィックを段階的に Green に切り替え (ELB Target Group 変更)
+4. 既存バージョン(Blue)終了
 
-- ✅ RDS automated backups (7-day retention)
-- ✅ S3 versioning enabled
-- ✅ RDS final snapshot before deletion (production)
-- ✅ S3 lifecycle policies for cost optimization
+## 📊 モニタリングとロギング
 
-### 6. **High Availability**
+### CloudWatch Logs
 
-- ✅ Multi-AZ subnets across availability zones
-- ✅ RDS Multi-AZ option available (set `multi_az = true`)
-- ✅ ECS auto-scaling configuration ready
-- ✅ Application Load Balancer ready integration
+- ECS コンテナログは自動的に CloudWatch に送信
+- ロググループ: `/ecs/{project_name}-cluster`
 
-## 📊 Outputs
+### VPC Flow Logs
 
-After successful deployment, Terraform will output:
+- VPC トラフィック分析
+- CloudWatch Logs に保存
 
-- VPC ID and subnet IDs
-- EC2 instance details (ID, public/private IPs)
-- RDS endpoint and database name
-- ECS cluster and service information
-- S3 bucket name and ARN
-- SNS topic ARN
-- Security group IDs
+## 🔐 セキュリティのベストプラクティス
 
-Access outputs with:
+### 実装されたセキュリティ機能
 
-```bash
-terraform output
-terraform output -json
-terraform output vpc_id
-```
+1. **ネットワーク分離**: パブリック/プライベートサブネット分離
+2. **最小権限の原則**: IAM ロールに必要な最小権限のみ付与
+3. **暗号化**:
+   - RDS 保存データ暗号化
+   - S3 バケット暗号化
+   - EBS ボリューム暗号化
+4. **シークレット管理**: SSM Parameter Store (SecureString)
+5. **ネットワークセキュリティ**: セキュリティグループによるトラフィック制御
+6. **監査**: VPC Flow Logs によるネットワークトラフィックモニタリング
 
-## 🔄 Updating Infrastructure
+## 📝 出力値
 
-1. Modify your `.tf` files or `terraform.tfvars`
-2. Review changes: `terraform plan`
-3. Apply changes: `terraform apply`
+配布後、以下の情報を取得できます:
 
-## 🧹 Cleanup
+- VPC ID およびサブネット ID
+- ECR リポジトリ URL
+- ALB DNS 名
+- ECS クラスターおよびサービス名
+- RDS エンドポイント
+- S3 バケット名
 
-To destroy all resources:
-
-```bash
-terraform destroy
-```
-
-**Warning**: This will delete all resources including databases and S3 buckets. Make sure you have backups!
-
-## 📝 Module Documentation
-
-### VPC Module
-
-Creates a complete VPC setup with:
-
-- Public and private subnets
-- Internet Gateway
-- NAT Gateways (one per AZ)
-- Route tables
-- VPC Flow Logs
-
-### Security Group Module
-
-Flexible security group creation with:
-
-- Ingress and egress rule management
-- Support for CIDR blocks and security group references
-- Proper resource tagging
-
-### EC2 Module
-
-EC2 instance with security best practices:
-
-- IMDSv2 enforcement
-- Encrypted EBS volumes
-- Detailed monitoring option
-- Instance termination protection
-
-### ECS Module
-
-Complete ECS Fargate setup:
-
-- ECS cluster with Container Insights
-- Task and service definitions
-- Auto-scaling configuration
-- CloudWatch logging
-- IAM roles for task execution and task
-
-### RDS Module
-
-Production-ready RDS PostgreSQL:
-
-- Automated backups
-- Multi-AZ option
-- Encryption at rest
-- Enhanced monitoring
-- Performance Insights
-- CloudWatch log exports
-
-### S3 Module
-
-Secure S3 bucket:
-
-- Block all public access
-- Server-side encryption
-- Versioning
-- Lifecycle policies
-- Access logging support
-
-### SNS Module
-
-Notification system:
-
-- Topic creation
-- Subscription management
-- CloudWatch alarms for failed deliveries
-- Encryption support
-
-### SSM Module
-
-Secure parameter storage:
-
-- KMS encryption for SecureString
-- IAM access policy generation
-- Organized parameter hierarchy
-
-## 🛠️ Troubleshooting
-
-### Common Issues
-
-1. **Terraform Init Fails**
-
-   - Ensure Terraform version >= 1.5.0
-   - Check internet connectivity
-
-2. **Authentication Errors**
-
-   - Configure AWS CLI: `aws configure`
-   - Verify IAM permissions
-
-3. **Resource Creation Fails**
-
-   - Check AWS service quotas
-   - Verify CIDR block conflicts
-   - Ensure unique S3 bucket names
-
-4. **RDS Password Error**
-   - Password must be at least 8 characters
-   - Cannot contain certain special characters
-
-### Getting Help
-
-Check the [Terraform AWS Provider Documentation](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
-
-## 🔒 Security Notes
-
-1. **Never commit** `terraform.tfvars` or `.tfstate` files to version control
-2. Use **AWS Secrets Manager** or **SSM Parameter Store** for production secrets
-3. Enable **MFA** for AWS root and IAM users
-4. Regularly **rotate credentials** and keys
-5. Enable **CloudTrail** for audit logging
-6. Review **Security Groups** regularly
-
-## 📈 Cost Optimization
-
-- Use **t3.micro** instances (Free Tier eligible)
-- Enable **RDS auto-scaling** for storage
-- Implement **S3 lifecycle policies**
-- Use **FARGATE_SPOT** for non-critical ECS tasks
-- Set up **AWS Budgets** for cost alerts
-- Delete unused **NAT Gateways** in dev environments
-
-## 🚀 Production Readiness Checklist
-
-Before deploying to production:
-
-- [ ] Enable Multi-AZ for RDS (`multi_az = true`)
-- [ ] Set RDS deletion protection (`deletion_protection = true`)
-- [ ] Disable RDS skip final snapshot (`skip_final_snapshot = false`)
-- [ ] Configure remote backend (S3 + DynamoDB)
-- [ ] Set up proper IAM roles and policies
-- [ ] Enable AWS CloudTrail
-- [ ] Configure Route53 for DNS
-- [ ] Set up Application Load Balancer
-- [ ] Enable AWS WAF for ALB
-- [ ] Configure proper backup strategies
-- [ ] Set up monitoring and alerting
-- [ ] Document disaster recovery procedures
-- [ ] Restrict security group sources to known IPs
-- [ ] Enable AWS Config for compliance
-
-## 📚 Additional Resources
-
-- [Terraform Documentation](https://www.terraform.io/docs)
-- [AWS Well-Architected Framework](https://aws.amazon.com/architecture/well-architected/)
-- [AWS Security Best Practices](https://docs.aws.amazon.com/security/)
-- [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 👥 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
----
-
-**Note**: This is a study/learning project. Always review and test thoroughly before using in production environments.
+</details>
