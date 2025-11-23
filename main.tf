@@ -366,7 +366,7 @@ module "ecs" {
     }
   ]
 
-  enable_autoscaling = false
+  enable_autoscaling = true
 
   s3_bucket_arn = module.s3.bucket_arn
 
