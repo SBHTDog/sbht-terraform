@@ -396,6 +396,7 @@ module "codedeploy" {
   auto_rollback_events  = ["DEPLOYMENT_FAILURE", "DEPLOYMENT_STOP_ON_ALARM"]
 
   deployment_ready_action    = var.codedeploy_deployment_ready_action
+  deployment_ready_wait_time = var.codedeploy_deployment_ready_timeout
   terminate_blue_action      = "TERMINATE"
   termination_wait_time      = 5
 

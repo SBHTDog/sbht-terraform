@@ -208,6 +208,16 @@ variable "codedeploy_deployment_ready_action" {
   default     = "CONTINUE_DEPLOYMENT"
 }
 
+variable "codedeploy_deployment_ready_timeout" {
+  description = "Wait time in minutes for manual approval when deployment_ready_action is STOP_DEPLOYMENT (0-2880)"
+  type        = number
+  default     = 60
+  validation {
+    condition     = var.codedeploy_deployment_ready_timeout >= 0 && var.codedeploy_deployment_ready_timeout <= 2880
+    error_message = "Deployment ready timeout must be between 0 and 2880 minutes."
+  }
+}
+
 # GitHub Actions OIDC Configuration
 variable "enable_github_oidc" {
   description = "Enable GitHub Actions OIDC provider and role"
